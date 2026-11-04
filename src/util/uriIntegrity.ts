@@ -1,13 +1,12 @@
 import * as crypto from 'crypto';
-import { TypeMetadata } from 'wallet-common';
-import z from 'zod';
+import type { TypeMetadata } from 'wallet-common';
 
 export type Algorithm = 'sha256' | 'sha384' | 'sha512';
 
 type UriWithIntegrity = {
 	uri: string;
-	integrity?: string;
-}
+	'uri#integrity'?: string;
+};
 
 /**
  * Creates an SRI string from a URL that servers an image.
@@ -15,18 +14,14 @@ type UriWithIntegrity = {
  * @param algorithm - Hashing algorithm to use (default: sha256)
  * @returns SRI string like: sha256-<base64Hash>
  */
-async function calculateImageSRI(
-	input: URL | RequestInfo | string,
-	algorithm: Algorithm = 'sha256'
-): Promise<string> {
-
+async function calculateImageSRI(input: string, algorithm: Algorithm = 'sha256'): Promise<string> {
 	const buffer = await getImageFromInput(input);
 
 	const hash = crypto.createHash(algorithm).update(buffer).digest('base64');
 	return `${algorithm}-${hash}`;
 }
 
-async function getImageFromInput(input: URL | RequestInfo | string): Promise<Buffer> {
+async function getImageFromInput(input: string): Promise<Buffer> {
 	const response = await fetch(input);
 
 	if (!response.ok) {
@@ -45,13 +40,13 @@ async function getImageFromInput(input: URL | RequestInfo | string): Promise<Buf
 function getAllUriValues(vctContent: TypeMetadata): UriWithIntegrity[] {
 	const integrityValues: UriWithIntegrity[] = [];
 
-	const addIfUriExists = (object: unknown) => {
-		if (object && typeof object === 'object' && object['uri']) {
-			integrityValues.push({ uri: object['uri'], integrity: object['uri#integrity'] });
+	const addIfUriExists = (object: UriWithIntegrity | undefined) => {
+		if (object?.uri) {
+			integrityValues.push(object);
 		}
 	};
 
-	vctContent.display?.forEach(displayEntry => {
+	vctContent.display?.forEach((displayEntry) => {
 		const rendering = displayEntry.rendering;
 		if (!rendering) return;
 
@@ -60,7 +55,7 @@ function getAllUriValues(vctContent: TypeMetadata): UriWithIntegrity[] {
 			addIfUriExists(rendering.simple.background_image);
 		}
 
-		rendering.svg_templates?.forEach(template => {
+		rendering.svg_templates?.forEach((template) => {
 			addIfUriExists(template);
 		});
 	});
@@ -68,14 +63,18 @@ function getAllUriValues(vctContent: TypeMetadata): UriWithIntegrity[] {
 	return integrityValues;
 }
 
-export async function verifyVctUriIntegrity(vctContent: z.infer<typeof TypeMetadata>): Promise<{ valid: boolean; message?: string }> {
-
+export async function verifyVctUriIntegrity(
+	vctContent: TypeMetadata,
+): Promise<{ valid: boolean; message?: string }> {
 	let valid: boolean = true;
 	const errors: string[] = [];
 
 	const uriValues = getAllUriValues(vctContent);
 
-	for (const { uri, integrity } of uriValues) {
+	for (const uriValue of uriValues) {
+		const uri = uriValue.uri;
+		const integrity = uriValue['uri#integrity'];
+
 		if (!integrity) {
 			continue;
 		}
@@ -88,7 +87,7 @@ export async function verifyVctUriIntegrity(vctContent: z.infer<typeof TypeMetad
 				continue;
 			}
 
-			const calculatedIntegrity = await calculateImageSRI(uri, alg as Algorithm)
+			const calculatedIntegrity = await calculateImageSRI(uri, alg as Algorithm);
 			if (calculatedIntegrity !== integrity) {
 				errors.push(`URI integrity mismatch for "${uri}".`);
 				valid = false;
@@ -101,7 +100,6 @@ export async function verifyVctUriIntegrity(vctContent: z.infer<typeof TypeMetad
 
 	return {
 		valid,
-		message: errors.length > 0 ? errors.join(" ") : undefined,
+		message: errors.length > 0 ? errors.join(' ') : undefined,
 	};
-
 }

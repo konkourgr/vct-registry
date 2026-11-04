@@ -11,13 +11,13 @@ export type Algorithm = 'sha256' | 'sha384' | 'sha512';
  * @returns SRI string like: sha256-<base64Hash>
  */
 export function createSRI(
-	input: Record<string, any> | string,
-	algorithm: Algorithm = 'sha256'
+	input: Record<string, unknown> | string,
+	algorithm: Algorithm = 'sha256',
 ): string {
 	let buffer: Buffer;
 
 	if (typeof input === 'string') {
-		const fullPath = path.join(__dirname, "../public/images/", input);
+		const fullPath = path.join(__dirname, '../public/images/', input);
 		// Treat as file path
 		if (!fs.existsSync(fullPath)) {
 			throw new Error(`File not found: ${fullPath}`);

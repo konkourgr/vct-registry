@@ -1,12 +1,14 @@
 # EditorConfig: https://EditorConfig.org
 
+root = true
+
 [*]
 charset = utf-8
 # Type of newline is managed by git in .gitattributes
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[{*.{Dockerfile,js,jsx,ts,tsx},Dockerfile}]
+[{*.{Dockerfile,js,mjs,jsx,ts,tsx},Dockerfile}]
 indent_style = tab
 indent_size = 4
 

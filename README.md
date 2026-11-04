@@ -15,31 +15,35 @@ Users can browse registered Type Metadata, while administrators can create, edit
 - REST API for metadata access
 - Database-backed storage
 
-
 > [!NOTE]
 > To quickly setup the **wwWallet** ecosystem see https://github.com/wwWallet/wwwallet
 
 ## How to run
 
 Install dependencies
+
 ```
 yarn install
 ```
 
 Run in dev mode
+
 ```
 yarn run dev
 ```
 
 ## Storage
+
 VC Type Metadata entries are stored in a database, in table `vct`, containing columns `urn` (VCT urn identifier, the primary key) and `metadata` (a JSON object containing the VC Type Metadata).
 
 Setting up VCT Registry as part of the wwWallet ecosystem provides a MariaDB database, but any database can be used.
 
 ## Security
+
 Editing Type Metadata is protected using Basic authentication. The username and password can be configured. A strong password is recommended to avoid unauthorized metadata editing.
 
 ## API
+
 | Method | Endpoint                 | Description                          |
 | ------ | ------------------------ | ------------------------------------ |
 | GET    | `/type-metadata/all`     | Retrieve all registered metadata     |
@@ -47,7 +51,9 @@ Editing Type Metadata is protected using Basic authentication. The username and 
 | GET    | `/api/vct-list`          | List available VCTs                  |
 
 ### Example
+
 **GET** `/type-metadata?vct=urn:eu.europa.ec.eudi:pid:1`
+
 ```
 {
   "vct": "urn:eu.europa.ec.eudi:pid:1",
@@ -83,8 +89,18 @@ pre-commit run --all-files
 git add -A
 ```
 
+#### Local checks without committing
+
+Run only the EditorConfig check, without running auto-fixers:
+
+```sh
+pre-commit run editorconfig-checker --all-files
+```
+
+Omit `--all-files` to check only staged files. The first run installs the pinned native checker in pre-commit's cache. This check reports violations without changing or staging files.
+
 #### What happens on commit
 
 - Auto-fixers run (e.g. add final newlines).
-- After the auto-fixers, the editorconfig-checker runs inside Docker to validate all staged files.
+- After the auto-fixers, editorconfig-checker validates staged files.
 - If violations remain, fix them manually until the commit passes.
