@@ -5,12 +5,32 @@ import { createVct, deleteVctByUrn, getVctByUrn, updateVctByUrn } from '../db/vc
 import { decodeVct } from '../util';
 import { config } from '../../config';
 import { getMetadataPreviewDataUri } from '../util/metadataPreview';
-import { verifyVctUriIntegrity } from '../util/uriIntegrity';
+import { addVctUriIntegrity, verifyVctUriIntegrity } from '../util/uriIntegrity';
 
 /** /vct */
 const dbVctRouter = Router();
 
 /** NO GET /vct/get?vct=urn:... endpoint - this is handled by GET /type-metadata?. */
+
+dbVctRouter.post('/integrity', async (req, res) => {
+	const validation = TypeMetadata.safeParse(req.body?.metadata);
+	if (!validation.success) {
+		return res.status(400).json({
+			error: 'invalid_metadata',
+			message: 'Metadata validation failed. Fix the JSON document before submitting.',
+		});
+	}
+
+	try {
+		const metadata = await addVctUriIntegrity(validation.data);
+		return res.json({ metadata });
+	} catch (error) {
+		return res.status(400).json({
+			error: 'uri_integrity_failed',
+			message: error instanceof Error ? error.message : 'Failed to calculate URI integrity.',
+		});
+	}
+});
 
 dbVctRouter.post('/create', async (req, res) => {
 	const vct = decodeVct(req.body.vct);
